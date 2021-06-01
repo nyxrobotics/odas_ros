@@ -1,0 +1,34 @@
+name: lint-test
+
+on: [push]
+
+jobs:
+  clang-format:
+    runs-on: ubuntu-18.04
+    name: clang-format-lint
+    steps:
+    - uses: actions/checkout@v2
+    - uses: DoozyX/clang-format-lint-action@v0.8
+      with:
+        source: '.'
+        exclude: ''
+        extensions: 'h,cpp,hpp'
+        clangFormatVersion: 8
+        style: file
+  flake8-lint:
+    runs-on: ubuntu-18.04
+    name: flake8-lint
+    steps:
+      - name: Check out source repository
+        uses: actions/checkout@v2
+      - name: Set up Python environment
+        uses: actions/setup-python@v1
+        with:
+          python-version: "2.7"
+      - name: flake8 Lint
+        uses: py-actions/flake8@v1
+        with:
+          ignore: "F401,W503"
+        #   exclude: "src/ignoreme.py"
+          max-line-length: "119"
+        #   path: "src" 
