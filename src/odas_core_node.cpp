@@ -2,96 +2,82 @@
 #include "std_msgs/String.h"
 #include <string>
 
-//From odas demo client
-extern "C" 
-{
-    #include <odas.h>
-    #include <parameters.h>
-    #include <configs.h>
-    #include <objects.h>
-    #include <threads.h>
-    #include <profiler.h>
+// From odas demo client
+extern "C" {
+#include <odas.h>
+#include <parameters.h>
+#include <configs.h>
+#include <objects.h>
+#include <threads.h>
+#include <profiler.h>
 }
 
-int main(int argc, char **argv)
+int main(int argc, char** argv)
 {
-    ros::init(argc, argv, "odas_core_node");
-    ros::NodeHandle privateNodeHandle("~");
+  ros::init(argc, argv, "odas_core_node");
+  ros::NodeHandle privateNodeHandle("~");
 
-    std::string configFile;
-    privateNodeHandle.getParam("configuration_path", configFile);
+  std::string configFile;
+  privateNodeHandle.getParam("configuration_path", configFile);
 
-    ROS_INFO("Using configuration file = %s", configFile.c_str());
+  ROS_INFO("Using configuration file = %s", configFile.c_str());
 
-    // +------------------------------------------------------+
-    // | Multiple threads                                     |
-    // +------------------------------------------------------+  
+  // +------------------------------------------------------+
+  // | Multiple threads                                     |
+  // +------------------------------------------------------+
 
+  // +----------------------------------------------------------+
+  // | Variables                                                |
+  // +----------------------------------------------------------+
 
+  // +------------------------------------------------------+
+  // | Objects                                              |
+  // +------------------------------------------------------+
+  objects* objs = NULL;
+  aobjects* aobjs = NULL;
 
-    // +----------------------------------------------------------+
-    // | Variables                                                |
-    // +----------------------------------------------------------+  
+  // +------------------------------------------------------+
+  // | Configurations                                       |
+  // +------------------------------------------------------+
+  configs* cfgs = NULL;
 
+  // +--------------------------------------------------+
+  // | Configure                                        |
+  // +--------------------------------------------------+
+  ROS_INFO("| + Initializing configurations...... ");
+  cfgs = configs_construct(configFile.c_str());
 
-    // +------------------------------------------------------+
-    // | Objects                                              |
-    // +------------------------------------------------------+   
-    objects * objs = NULL;
-    aobjects * aobjs = NULL;
+  // +--------------------------------------------------+
+  // | Construct                                        |
+  // +--------------------------------------------------+
+  ROS_INFO("| + Initializing objects............. ");
+  aobjs = aobjects_construct(cfgs);
 
-    // +------------------------------------------------------+
-    // | Configurations                                       |
-    // +------------------------------------------------------+        
-    configs * cfgs = NULL;   
+  // +--------------------------------------------------+
+  // | Launch threads                                   |
+  // +--------------------------------------------------+
+  ROS_INFO("| + Launch threads................... ");
+  threads_multiple_start(aobjs);
 
+  ROS_INFO("| + ROS SPINNING................... ");
 
-    // +--------------------------------------------------+
-    // | Configure                                        |
-    // +--------------------------------------------------+ 
-    ROS_INFO("| + Initializing configurations...... ");
-    cfgs = configs_construct(configFile.c_str());
+  // Start ros loop
+  ros::spin();
 
+  // +--------------------------------------------------+
+  // | Wait                                             |
+  // +--------------------------------------------------+
+  ROS_INFO("| + Threads join.................. ");
+  threads_multiple_join(aobjs);
 
+  // +--------------------------------------------------+
+  // | Free memory                                      |
+  // +--------------------------------------------------+
+  ROS_INFO("| + Free memory...................... ");
 
-    // +--------------------------------------------------+
-    // | Construct                                        |
-    // +--------------------------------------------------+ 
-    ROS_INFO("| + Initializing objects............. ");
-    aobjs = aobjects_construct(cfgs);    
+  aobjects_destroy(aobjs);
+  configs_destroy(cfgs);
+  ROS_INFO("Done!");
 
-
-
-    // +--------------------------------------------------+
-    // | Launch threads                                   |
-    // +--------------------------------------------------+  
-    ROS_INFO("| + Launch threads................... ");
-    threads_multiple_start(aobjs);
-
-
-    ROS_INFO("| + ROS SPINNING................... ");
-            
-    //Start ros loop
-    ros::spin();
-
-    // +--------------------------------------------------+
-    // | Wait                                             |
-    // +--------------------------------------------------+
-    ROS_INFO("| + Threads join.................. "); 
-    threads_multiple_join(aobjs);
-
-
-
-    // +--------------------------------------------------+
-    // | Free memory                                      |
-    // +--------------------------------------------------+ 
-    ROS_INFO("| + Free memory...................... "); 
-
-
-    aobjects_destroy(aobjs);
-    configs_destroy(cfgs);
-    ROS_INFO("Done!");
-
-
-    return 0;
+  return 0;
 }

@@ -7,11 +7,14 @@ import io
 import libconf
 
 import std_msgs.msg
-import tf2_geometry_msgs, tf2_ros, tf_conversions
+import tf2_geometry_msgs
+import tf2_ros
+import tf_conversions
 
 import sensor_msgs.point_cloud2 as pcl2
 from odas_ros.msg import OdasSst, OdasSstArrayStamped, OdasSsl, OdasSslArrayStamped
 from sensor_msgs.msg import PointCloud2, PointField
+
 
 class OdasVisualizationNode:
     def __init__(self):
@@ -70,17 +73,17 @@ class OdasVisualizationNode:
                 # Extract xyz position of potential sound source on unit sphere from Sound Source Localization
                 point = [source.x, source.y, source.z, source.E]
                 cloud_points.append(point)
-            #header
+            # header
             header = std_msgs.msg.Header()
             header.stamp = rospy.Time.now()
             header.frame_id = ssl.header.frame_id
-            #fields
-            fields = [ PointField('x', 0, PointField.FLOAT32, 1),
-                       PointField('y', 4, PointField.FLOAT32, 1),
-                       PointField('z', 8, PointField.FLOAT32, 1),
-                       PointField('intensity', 12, PointField.FLOAT32, 1)]
-            #create pcl from points
-            pcl = pcl2.create_cloud(header,fields,cloud_points)
+            # fields
+            fields = [PointField('x', 0, PointField.FLOAT32, 1),
+                      PointField('y', 4, PointField.FLOAT32, 1),
+                      PointField('z', 8, PointField.FLOAT32, 1),
+                      PointField('intensity', 12, PointField.FLOAT32, 1)]
+            # create pcl from points
+            pcl = pcl2.create_cloud(header, fields, cloud_points)
             self._ssl_pcl_pub.publish(pcl)
 
     def _sst_cb(self, sst):
@@ -98,7 +101,7 @@ class OdasVisualizationNode:
         z = sst.sources[0].z
 
         # Convert the xyz position of the unit vector in quaternion
-        q = self._unitVector_to_quaternion(x,y,z)
+        q = self._unitVector_to_quaternion(x, y, z)
 
         # Update the SST PoseStamped
         self._sst_input_PoseStamped.pose.orientation.x = q[0]
@@ -112,14 +115,15 @@ class OdasVisualizationNode:
 
     def _unitVector_to_quaternion(self, x, y, z):
         # Convert a xyz unit vector (point on a unit sphere) to quaternion
-        yaw = np.arctan2(y,x)
-        pitch = -np.arctan2(z,np.sqrt(x*x+y*y))
+        yaw = np.arctan2(y, x)
+        pitch = -np.arctan2(z, np.sqrt(x * x + y * y))
         roll = 0
         q = tf_conversions.transformations.quaternion_from_euler(roll, pitch, yaw)
         return q
 
     def run(self):
         rospy.spin()
+
 
 def main():
     rospy.init_node('odas_visualization_node')

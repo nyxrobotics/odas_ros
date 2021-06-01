@@ -9,7 +9,9 @@ import io
 
 import rospy
 
-import tf2_geometry_msgs, tf2_ros, tf_conversions
+import tf2_geometry_msgs
+import tf2_ros
+import tf_conversions
 import std_msgs.msg
 from odas_ros.msg import OdasSst, OdasSstArrayStamped, OdasSsl, OdasSslArrayStamped
 from audio_utils.msg import AudioFrame
@@ -31,7 +33,7 @@ class OdasServerNode:
             self._ssl_client_socket = None
             self._ssl_pub = rospy.Publisher('ssl', OdasSslArrayStamped, queue_size=10)
             self._ssl_enabled = True
-        
+
         # Initialize SST (Sound Source Tracking) if configuration is correct.
         if self._verify_sst_configuration():
             self._sst_port = self._configuration['sst']['tracked']['interface']['port']
@@ -52,9 +54,8 @@ class OdasServerNode:
             self._sss_client_socket = None
             self._sss_pub = rospy.Publisher('sss', AudioFrame, queue_size=10)
             self._sss_enabled = True
-        
+
         self.run()
-        
 
     def _load_configuration(self, configuration_path):
         with io.open(configuration_path) as f:
@@ -70,7 +71,6 @@ class OdasServerNode:
         else:
             return True
 
-    
     def _verify_sst_configuration(self):
         # If interface type is not socket, SST disabled.
         # If interface type is socket and the format is json, SST enabled.
@@ -81,15 +81,13 @@ class OdasServerNode:
         else:
             return True
 
-
     def _verify_sss_configuration(self):
         # If interface type is not socket, SSS disabled.
         # If interface type is socket, SSS enabled.
         if self._configuration['sss']['separated']['interface']['type'] != 'socket':
             return False
-        else: 
+        else:
             return True
-
 
     def _sss_nbits_to_sss_format(self, nbits):
         if nbits == 8:
@@ -127,7 +125,7 @@ class OdasServerNode:
 
                 data = data.decode('utf-8')
                 messages = data.split(']\n}\n')
-                
+
                 for message in messages:
                     message += ']\n}\n'
                     try:
@@ -136,7 +134,6 @@ class OdasServerNode:
                     except Exception as e:
                         print(e)
                         continue
-
 
     def _send_ssl(self, ssl):
         odas_ssl_array_stamped_msg = OdasSslArrayStamped()
@@ -153,7 +150,6 @@ class OdasServerNode:
             odas_ssl_array_stamped_msg.sources.append(odas_ssl)
 
         self._ssl_pub.publish(odas_ssl_array_stamped_msg)
-
 
     def _sst_thread_run(self):
         self._sst_server_socket = self._create_server_socket(self._sst_port)
@@ -172,7 +168,7 @@ class OdasServerNode:
 
                 data = data.decode('utf-8')
                 messages = data.split(']\n}\n')
-                
+
                 for message in messages:
                     message += ']\n}\n'
                     try:
@@ -228,7 +224,6 @@ class OdasServerNode:
         audio_frame_msg.data = data
         self._sss_pub.publish(audio_frame_msg)
 
-
     def run(self):
         # Open sockets and run threads
         if self._ssl_enabled:
@@ -243,7 +238,7 @@ class OdasServerNode:
             sss_thread = threading.Thread(target=self._sss_thread_run)
             sss_thread.start()
             print("Sound Source Separation Started")
-        
+
         rospy.spin()
 
         # Close sockets and join threads
@@ -264,8 +259,8 @@ class OdasServerNode:
             if self._sss_client_socket is not None:
                 self._sss_client_socket.close()
             sss_thread.join()
-        
-        
+
+
 def main():
     rospy.init_node('odas_server_node')
     odas_server_node = OdasServerNode()
